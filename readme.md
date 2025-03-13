@@ -83,6 +83,4 @@ Example (only check files between 1MB and 10MB):
 python hfrdup.py find ./documents -o duplicates.txt --min-size 1048576 --max-size 10485760
 ```
 
-## Summary
-After execution, the script prints the total duplicates found or removed and saves results to the specified file when applicable.
 
