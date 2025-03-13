@@ -66,10 +66,82 @@ def find_duplicate_files(folder, output_file, regex_filter=None, min_size=None, 
     print(f"Duplicate file list saved to {output_file}")
     print(f"Total duplicate files found: {total_duplicates}")
 
+def delete_duplicates_from_log(log_file):
+    with open(log_file, 'r') as f:
+        lines = f.readlines()
+    
+    for line in lines:
+        if line.startswith("DUPLICATE"):
+            file_path = line.split("DUPLICATE ")[1].strip()
+            try:
+                os.remove(file_path)
+                print(f"Deleted: {file_path}")
+            except Exception as e:
+                print(f"Error deleting {file_path}: {e}")
+
+def delete_duplicates_per_folder(folder):
+    hashes = {}
+    
+    for root, _, files in os.walk(folder):
+        local_hashes = {}
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_hash = get_file_hash(file_path)
+            
+            if file_hash:
+                if file_hash in local_hashes:
+                    try:
+                        os.remove(file_path)
+                        print(f"Deleted: {file_path}")
+                    except Exception as e:
+                        print(f"Error deleting {file_path}: {e}")
+                else:
+                    local_hashes[file_hash] = file_path
+
+def delete_duplicates_globally(folder):
+    hashes = {}
+    
+    for root, _, files in os.walk(folder):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_hash = get_file_hash(file_path)
+            
+            if file_hash:
+                if file_hash in hashes:
+                    try:
+                        os.remove(file_path)
+                        print(f"Deleted: {file_path}")
+                    except Exception as e:
+                        print(f"Error deleting {file_path}: {e}")
+                else:
+                    hashes[file_hash] = file_path
+
+def delete_duplicates_with_reference(source_folder, target_folder):
+    source_hashes = {}
+    
+    for root, _, files in os.walk(source_folder):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_hash = get_file_hash(file_path)
+            if file_hash:
+                source_hashes[file_hash] = file_path
+    
+    for root, _, files in os.walk(target_folder):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_hash = get_file_hash(file_path)
+            
+            if file_hash in source_hashes:
+                try:
+                    os.remove(file_path)
+                    print(f"Deleted: {file_path}")
+                except Exception as e:
+                    print(f"Error deleting {file_path}: {e}")
+
 def main():
     parser = argparse.ArgumentParser(description="File Deduplication Tool")
     parser.add_argument("mode", choices=["find", "del", "del_folder", "del_global", "del_ref"], help="Mode: find, del, del_folder, del_global, del_ref")
-    parser.add_argument("path", help="Path to folder or log file")
+    parser.add_argument("path", nargs="?", help="Path to folder or log file (not required for del_ref)")
     parser.add_argument("-o", "--output", help="Output file (for 'find')")
     parser.add_argument("-s", "--source", help="Source folder (for 'del_ref')")
     parser.add_argument("-t", "--target", help="Target folder (for 'del_ref')")
@@ -83,6 +155,17 @@ def main():
             print("Error: -o/--output is required for 'find'")
             return
         find_duplicate_files(args.path, args.output, regex_filter=args.regex, min_size=args.min_size, max_size=args.max_size)
-    
+    elif args.mode == "del":
+        delete_duplicates_from_log(args.path)
+    elif args.mode == "del_folder":
+        delete_duplicates_per_folder(args.path)
+    elif args.mode == "del_global":
+        delete_duplicates_globally(args.path)
+    elif args.mode == "del_ref":
+        if not args.source or not args.target:
+            print("Error: -s/--source and -t/--target are required for 'del_ref'")
+            return
+        delete_duplicates_with_reference(args.source, args.target)
+
 if __name__ == "__main__":
     main()
