@@ -36,7 +36,7 @@ Example:
 python hfrdup.py del duplicates.txt
 ```
 
-### Removing Duplicates per Folder Separately
+### Removing Duplicates per Folder Separately (recursive)
 ```sh
 python hfrdup.py del_folder <folder_path>
 ```
